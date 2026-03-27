@@ -387,6 +387,9 @@ async def admin_embed_code(study_id: str, request: Request):
         raise HTTPException(404, "Study not found")
 
     backend_url = str(request.base_url).rstrip("/")
+    # Railway terminates TLS at the proxy; base_url arrives as http:// — force https://
+    if backend_url.startswith("http://") and "localhost" not in backend_url:
+        backend_url = "https://" + backend_url[len("http://"):]
     root = Path(__file__).parent.parent
 
     widget_js   = (root / "frontend" / "qualtrics_widget.js").read_text()
