@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DynamicBot Admin</title>
+<style>
+/* ─── Reset & Base ──────────────────────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:15px}
+body{font-family:'Segoe UI',system-ui,Arial,sans-serif;color:#1a1a2e;background:#f0f2f5;min-height:100vh}
+a{color:#1a6bb5;text-decoration:none}
+/* ─── Utilities ─────────────────────────────────────────────────── */
+.hidden{display:none!important}
+.mt{margin-top:20px}
+.mt-sm{margin-top:10px}
+.text-muted{color:#6b7280;font-size:0.88rem}
+.text-danger{color:#c62828}
+.text-success{color:#2e7d32}
+.flex{display:flex}.items-center{align-items:center}.gap-8{gap:8px}.gap-16{gap:16px}
+.grow{flex:1}
+/* ─── Screens ───────────────────────────────────────────────────── */
+.screen{min-height:100vh}
+/* ─── Login ─────────────────────────────────────────────────────── */
+#login-screen{display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#1a3a5c,#1a6bb5)}
+.login-card{background:#fff;border-radius:16px;padding:44px 48px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.login-logo{text-align:center;margin-bottom:32px}
+.login-logo h1{font-size:1.9rem;font-weight:700;color:#1a3a5c;letter-spacing:-.02em}
+.login-logo p{color:#6b7280;margin-top:4px}
+.login-logo .logo-dot{display:inline-block;width:10px;height:10px;background:#1a6bb5;border-radius:50%;margin-right:6px}
+#login-error{color:#c62828;font-size:.85rem;margin-top:8px}
+/* ─── Navbar ────────────────────────────────────────────────────── */
+.navbar{background:#1a3a5c;color:#fff;padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.navbar-brand{display:flex;align-items:center;gap:10px;font-weight:700;font-size:1.05rem;letter-spacing:.01em}
+.brand-pill{background:#1a6bb5;color:#fff;font-size:.65rem;font-weight:700;padding:2px 8px;border-radius:20px;letter-spacing:.05em;text-transform:uppercase}
+.navbar-meta{font-size:.78rem;color:#94a3b8}
+/* ─── Layout ────────────────────────────────────────────────────── */
+#main-content{max-width:1100px;margin:0 auto;padding:32px 24px}
+/* ─── Page Header ───────────────────────────────────────────────── */
+.page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px}
+.page-header h2{font-size:1.4rem;font-weight:700;color:#1a1a2e}
+.page-header p{color:#6b7280;margin-top:2px;font-size:.9rem}
+/* ─── Buttons ───────────────────────────────────────────────────── */
+.btn,.btn-primary,.btn-secondary,.btn-ghost,.btn-danger,.btn-sm{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:7px;cursor:pointer;font-size:.9rem;font-weight:600;padding:9px 18px;transition:all .15s;font-family:inherit}
+.btn-primary{background:#1a6bb5;color:#fff}
+.btn-primary:hover{background:#15548e}
+.btn-secondary{background:#e5e7eb;color:#374151}
+.btn-secondary:hover{background:#d1d5db}
+.btn-ghost{background:transparent;color:#94a3b8;padding:8px 12px}
+.btn-ghost:hover{color:#fff;background:rgba(255,255,255,.1)}
+.btn-danger{background:#c62828;color:#fff}
+.btn-danger:hover{background:#b71c1c}
+.btn-sm{padding:5px 12px;font-size:.82rem}
+.btn-icon{background:none;border:none;cursor:pointer;color:#9ca3af;padding:6px;border-radius:5px;transition:.15s;display:inline-flex;align-items:center}
+.btn-icon:hover{color:#1a6bb5;background:#e8f0fe}
+.btn-icon.danger:hover{color:#c62828;background:#fdecea}
+/* ─── Forms ─────────────────────────────────────────────────────── */
+.form-label{display:block;font-weight:600;color:#374151;font-size:.88rem;margin-bottom:6px}
+.form-hint{display:block;color:#6b7280;font-size:.8rem;font-weight:400;margin-top:2px}
+.form-input,.form-textarea,.code-editor{width:100%;border:1px solid #d1d5db;border-radius:7px;padding:9px 12px;font-size:.92rem;font-family:inherit;color:#1a1a2e;outline:none;transition:border .15s;background:#fff}
+.form-input:focus,.form-textarea:focus,.code-editor:focus{border-color:#1a6bb5;box-shadow:0 0 0 3px rgba(26,107,181,.12)}
+.form-textarea{resize:vertical;line-height:1.55}
+.code-editor{font-family:'SF Mono','Fira Code','Consolas',monospace;font-size:.82rem;line-height:1.6;background:#1e1e2e;color:#cdd6f4;border-color:#313244}
+.code-editor:focus{border-color:#89b4fa}
+.form-input.narrow{max-width:120px}
+.form-range{width:100%;accent-color:#1a6bb5}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+@media(max-width:600px){.form-row-2{grid-template-columns:1fr}}
+.form-section{background:#fff;border-radius:10px;padding:24px;border:1px solid #e5e7eb}
+/* ─── Studies Grid ───────────────────────────────────────────────── */
+.studies-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:18px}
+.study-card{background:#fff;border-radius:10px;border:1px solid #e5e7eb;padding:20px;display:flex;flex-direction:column;gap:10px;transition:.15s;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.study-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1);border-color:#bfdbfe}
+.study-card-name{font-weight:700;font-size:1rem;color:#1a1a2e}
+.study-card-meta{font-size:.8rem;color:#6b7280;display:flex;gap:12px;flex-wrap:wrap}
+.study-card-badge{background:#dbeafe;color:#1e40af;font-size:.75rem;font-weight:600;padding:2px 8px;border-radius:20px}
+.study-card-actions{display:flex;gap:6px;margin-top:4px}
+/* ─── Empty state ───────────────────────────────────────────────── */
+.empty-state{text-align:center;padding:60px 20px;background:#fff;border-radius:10px;border:2px dashed #d1d5db}
+.empty-state svg{color:#9ca3af;margin-bottom:16px}
+.empty-state h3{font-size:1.1rem;color:#374151;margin-bottom:8px}
+.empty-state p{color:#6b7280;margin-bottom:20px}
+/* ─── Tabs ───────────────────────────────────────────────────────── */
+.tabs{display:flex;gap:2px;background:#e5e7eb;border-radius:9px;padding:3px;margin-bottom:20px;width:fit-content}
+.tab{background:none;border:none;cursor:pointer;padding:8px 18px;border-radius:7px;font-size:.88rem;font-weight:600;color:#6b7280;font-family:inherit;transition:.15s}
+.tab.active{background:#fff;color:#1a3a5c;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.tab:hover:not(.active){color:#374151}
+.tab:disabled{opacity:.4;cursor:not-allowed}
+.tab-content{display:none}
+.tab-content.active{display:block}
+/* ─── Code block ─────────────────────────────────────────────────── */
+.code-block-wrap{position:relative;margin-top:8px}
+.code-block{background:#1e1e2e;color:#cdd6f4;border-radius:8px;padding:18px;font-family:'SF Mono','Fira Code','Consolas',monospace;font-size:.8rem;line-height:1.7;overflow-x:auto;max-height:320px;overflow-y:auto;white-space:pre;border:1px solid #313244}
+.copy-btn{position:absolute;top:10px;right:10px;background:#313244;color:#cdd6f4;border:none;border-radius:5px;padding:5px 11px;font-size:.75rem;cursor:pointer;font-family:inherit;transition:.15s}
+.copy-btn:hover{background:#45475a}
+.copy-btn.copied{background:#1a6bb5;color:#fff}
+/* ─── Info / warning boxes ───────────────────────────────────────── */
+.info-box{background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:14px 16px;font-size:.88rem;color:#1e40af;line-height:1.55}
+.warn-box{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:14px 16px;font-size:.88rem;color:#92400e;line-height:1.55}
+.success-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;padding:14px 16px;font-size:.88rem;color:#166534;line-height:1.55}
+/* ─── Guide steps ────────────────────────────────────────────────── */
+.guide{border:1px solid #e5e7eb;border-radius:10px;overflow:hidden}
+.guide-header{background:#1a3a5c;color:#fff;padding:16px 20px;font-weight:700;font-size:.95rem}
+.guide-step{padding:18px 20px;border-top:1px solid #e5e7eb;display:flex;gap:14px}
+.guide-step:first-of-type{border-top:none}
+.step-num{flex-shrink:0;width:28px;height:28px;background:#1a6bb5;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;margin-top:1px}
+.step-body h4{font-size:.92rem;font-weight:700;color:#1a1a2e;margin-bottom:6px}
+.step-body p,.step-body li{font-size:.88rem;color:#374151;line-height:1.6}
+.step-body ul{padding-left:18px;margin-top:4px}
+.step-body .inline-code{background:#f3f4f6;color:#1a3a5c;font-family:monospace;padding:1px 6px;border-radius:4px;font-size:.82rem}
+/* ─── CSV upload ─────────────────────────────────────────────────── */
+.drop-zone{border:2px dashed #d1d5db;border-radius:8px;padding:32px 20px;text-align:center;cursor:pointer;transition:.15s}
+.drop-zone:hover,.drop-zone.dragover{border-color:#1a6bb5;background:#eff6ff}
+.drop-zone p{color:#6b7280;font-size:.9rem}
+.drop-zone .link{color:#1a6bb5;font-weight:600;cursor:pointer}
+/* ─── Modal ──────────────────────────────────────────────────────── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:200}
+.modal-box{background:#fff;border-radius:12px;padding:28px 32px;max-width:420px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.modal-box h3{font-size:1.1rem;font-weight:700;margin-bottom:10px}
+.modal-box p{color:#4b5563;font-size:.9rem;line-height:1.6;margin-bottom:20px}
+.modal-actions{display:flex;justify-content:flex-end;gap:10px}
+/* ─── Toast ──────────────────────────────────────────────────────── */
+#toast{position:fixed;bottom:28px;left:50%;transform:translateX(-50%) translateY(20px);background:#1a1a2e;color:#fff;padding:12px 22px;border-radius:8px;font-size:.88rem;font-weight:500;z-index:300;opacity:0;transition:.3s;pointer-events:none;white-space:nowrap}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+#toast.success{background:#166534}
+#toast.error{background:#c62828}
+/* ─── Validation msg ─────────────────────────────────────────────── */
+.val-error{color:#c62828;font-size:.82rem;margin-top:6px}
+.val-ok{color:#166534;font-size:.82rem;margin-top:6px}
+/* ─── Divider ─────────────────────────────────────────────────────── */
+.divider{border:none;border-top:1px solid #e5e7eb;margin:24px 0}
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     LOGIN SCREEN
+══════════════════════════════════════════════════════════ -->
+<div id="login-screen" class="screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1><span class="logo-dot"></span>DynamicBot</h1>
+      <p>Survey Interview Platform — Admin</p>
+    </div>
+    <form id="login-form">
+      <label class="form-label" for="api-key-input">Admin API Key</label>
+      <input class="form-input" type="password" id="api-key-input"
+             placeholder="Paste your admin key here..." autocomplete="off" required>
+      <p id="login-error" class="hidden" style="color:#c62828;font-size:.85rem;margin-top:8px"></p>
+      <button class="btn-primary" type="submit" style="width:100%;margin-top:16px;justify-content:center;padding:12px">
+        Sign In
+      </button>
+    </form>
+    <p class="text-muted mt-sm" style="text-align:center;font-size:.8rem">
+      The key is printed in the server startup logs.<br>
+      Set <code>ADMIN_API_KEY</code> in <code>.env</code> to make it permanent.
+    </p>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     APP SCREEN
+══════════════════════════════════════════════════════════ -->
+<div id="app-screen" class="screen hidden">
+
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-brand">
+      DynamicBot <span class="brand-pill">Admin</span>
+    </div>
+    <div class="flex items-center gap-16">
+      <span id="nav-server" class="navbar-meta"></span>
+      <button class="btn-ghost" onclick="logout()">Sign Out</button>
+    </div>
+  </nav>
+
+  <div id="main-content">
+
+    <!-- ── PAGE: STUDIES ───────────────────────────────────── -->
+    <div id="page-studies">
+      <div class="page-header">
+        <div>
+          <h2>Your Studies</h2>
+          <p class="text-muted">Each study holds a dataset and interview design for one survey deployment.</p>
+        </div>
+        <button class="btn-primary" onclick="openNewStudy()">+ New Study</button>
+      </div>
+      <div id="studies-grid" class="studies-grid"></div>
+      <div id="studies-empty" class="empty-state hidden">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        <h3>No studies yet</h3>
+        <p>Create your first study to get a Qualtrics embed code.</p>
+        <button class="btn-primary" onclick="openNewStudy()">Create First Study</button>
+      </div>
+    </div>
+
+    <!-- ── PAGE: EDIT / CREATE ──────────────────────────────── -->
+    <div id="page-edit" class="hidden">
+      <div class="page-header">
+        <div class="flex items-center gap-8">
+          <button class="btn-ghost" style="color:#6b7280;padding:8px 10px" onclick="goToStudies()">
+            ← Back
+          </button>
+          <h2 id="edit-title">New Study</h2>
+        </div>
+        <div class="flex gap-8">
+          <button class="btn-secondary" onclick="goToStudies()">Cancel</button>
+          <button class="btn-primary" id="save-btn" onclick="saveStudy()">Save Study</button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-tab="info" onclick="switchTab('info')">① Study Info</button>
+        <button class="tab" data-tab="data" onclick="switchTab('data')">② Project Data</button>
+        <button class="tab" data-tab="prompt" onclick="switchTab('prompt')">③ Interview Design</button>
+        <button class="tab" id="tab-embed-btn" data-tab="embed" onclick="switchTab('embed')" disabled>④ Embed in Qualtrics</button>
+      </div>
+
+      <!-- ① INFO ──────────────────────────────────────────── -->
+      <div id="tab-info" class="tab-content active">
+        <div class="form-section">
+          <label class="form-label">Study Name <span style="color:#c62828">*</span></label>
+          <input class="form-input" id="f-name" type="text"
+                 placeholder="e.g., IRA Clean Energy Public Opinion Study 2025" maxlength="120">
+
+          <label class="form-label mt">Description
+            <span class="form-hint">Optional notes for your team — not shown to respondents.</span>
+          </label>
+          <textarea class="form-textarea" id="f-description" rows="3"
+                    placeholder="E.g., Durham County pilot survey, Spring 2025 wave"></textarea>
+        </div>
+        <div class="info-box mt">
+          <strong>Tip:</strong> Use a clear name that includes the wave or date —
+          e.g. "IRA Study — NC Pilot — Apr 2025". This helps when you have multiple active studies.
+        </div>
+      </div>
+
+      <!-- ② DATA ──────────────────────────────────────────── -->
+      <div id="tab-data" class="tab-content">
+        <div class="form-section">
+          <div class="flex items-center gap-16" style="margin-bottom:14px">
+            <label style="font-weight:600;cursor:pointer">
+              <input type="radio" name="data-mode" value="json" checked onchange="setDataMode('json')">
+              &nbsp;JSON Editor
+            </label>
+            <label style="font-weight:600;cursor:pointer">
+              <input type="radio" name="data-mode" value="csv" onchange="setDataMode('csv')">
+              &nbsp;CSV Upload
+            </label>
+            <button class="btn-sm btn-secondary" style="margin-left:auto" onclick="downloadCSVTemplate()">
+              ↓ CSV Template
+            </button>
+          </div>
+
+          <!-- JSON MODE -->
+          <div id="json-editor-wrap">
+            <label class="form-label">Project Data (JSON)
+              <span class="form-hint">
+                Keys = 11-digit Census Tract FIPS codes. Include a <code>"DEFAULT"</code> entry as fallback.
+              </span>
+            </label>
+            <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
+              <button class="btn-sm btn-secondary" onclick="insertSampleJSON()">Insert Sample Data</button>
+            </div>
+            <textarea class="code-editor" id="f-data-json" rows="20" spellcheck="false"></textarea>
+            <p id="json-val-msg" class="mt-sm"></p>
+          </div>
+
+          <!-- CSV MODE -->
+          <div id="csv-editor-wrap" class="hidden">
+            <label class="form-label">Upload CSV File
+              <span class="form-hint">
+                Required columns: <code>census_tract</code>, <code>project_name</code>, <code>status</code>,
+                <code>jobs_created</code>, <code>timeline</code>, <code>location</code>,
+                <code>technology_type</code>, <code>developer</code>, <code>investment_amount</code>,
+                <code>ira_tax_credit</code>, <code>community_benefit</code>
+              </span>
+            </label>
+            <div class="drop-zone" id="drop-zone" onclick="document.getElementById('csv-file-input').click()">
+              <p>Drop CSV file here, or <span class="link">browse</span></p>
+              <p id="csv-filename" class="text-muted mt-sm"></p>
+            </div>
+            <input type="file" id="csv-file-input" accept=".csv" class="hidden">
+            <div id="csv-preview-wrap" class="hidden mt-sm">
+              <p id="csv-parse-msg" class="val-ok"></p>
+              <details style="margin-top:8px">
+                <summary style="cursor:pointer;color:#1a6bb5;font-size:.85rem">Preview parsed JSON</summary>
+                <textarea class="code-editor mt-sm" id="csv-json-preview" rows="10" readonly></textarea>
+              </details>
+            </div>
+          </div>
+        </div>
+
+        <div class="warn-box mt">
+          <strong>Required:</strong> Every study must have at least one Census Tract entry and a
+          <code>"DEFAULT"</code> entry — used as fallback when a respondent's CT is not in your data.
+        </div>
+      </div>
+
+      <!-- ③ PROMPT ─────────────────────────────────────────── -->
+      <div id="tab-prompt" class="tab-content">
+        <div class="form-section">
+          <div class="form-row-2">
+            <div>
+              <label class="form-label">Max Turns
+                <span class="form-hint">Number of respondent messages (1–10)</span>
+              </label>
+              <input class="form-input narrow" id="f-max-turns" type="number" min="1" max="10" value="3">
+            </div>
+            <div>
+              <label class="form-label">Temperature — <span id="temp-val">0.3</span>
+                <span class="form-hint">Lower = more factual. Recommended: 0.2–0.4</span>
+              </label>
+              <input type="range" id="f-temperature" min="0.1" max="0.9" step="0.1" value="0.3"
+                     class="form-range" oninput="document.getElementById('temp-val').textContent=this.value">
+            </div>
+          </div>
+
+          <hr class="divider">
+
+          <label class="form-label mt">Research Context &amp; Interviewer Instructions
+            <span class="form-hint">
+              Describe the study purpose, interviewer persona, and behavioral rules.
+              The project data block is appended automatically — do not include it here.
+            </span>
+          </label>
+          <textarea class="form-textarea" id="f-research-context" rows="13" spellcheck="true"></textarea>
+
+          <label class="form-label mt">Question Progression Guidance
+            <span class="form-hint">
+              Describe what to probe each turn. The LLM adapts these to the natural flow of conversation.
+            </span>
+          </label>
+          <textarea class="form-textarea" id="f-question-guidance" rows="9" spellcheck="true"></textarea>
+
+          <div class="success-box mt">
+            <strong>Zero-Hallucination Guarantee (always active)</strong><br>
+            Regardless of what you write above, the system automatically appends strict data-grounding rules
+            to every prompt: the LLM is explicitly forbidden from inventing facts beyond your project data,
+            instructed to deflect unknown questions gracefully, and limited to 200 words per response.
+          </div>
+        </div>
+      </div>
+
+      <!-- ④ EMBED ──────────────────────────────────────────── -->
+      <div id="tab-embed" class="tab-content">
+        <div id="embed-loading" style="text-align:center;padding:40px;color:#6b7280">
+          Loading embed code...
+        </div>
+        <div id="embed-content" class="hidden">
+
+          <!-- Code blocks -->
+          <div class="form-section">
+            <h3 style="font-size:1rem;font-weight:700;margin-bottom:16px">Your Qualtrics Embed Code</h3>
+
+            <label class="form-label">Step 1 — Paste into the Qualtrics HTML Block</label>
+            <div class="code-block-wrap">
+              <div class="code-block" id="embed-html-block"></div>
+              <button class="copy-btn" onclick="copyCode('embed-html-block',this)">Copy HTML</button>
+            </div>
+
+            <label class="form-label mt">Step 2 — Paste into the Qualtrics JavaScript Tab</label>
+            <div class="code-block-wrap">
+              <div class="code-block" id="embed-js-block"></div>
+              <button class="copy-btn" onclick="copyCode('embed-js-block',this)">Copy JS</button>
+            </div>
+          </div>
+
+          <!-- Qualtrics Integration Guide -->
+          <div class="guide mt">
+            <div class="guide-header">📋 Step-by-Step Qualtrics Integration Guide</div>
+
+            <div class="guide-step">
+              <div class="step-num">1</div>
+              <div class="step-body">
+                <h4>Prerequisites</h4>
+                <ul>
+                  <li>You know each respondent's 11-digit Census Tract FIPS code (e.g. <span class="inline-code">37063020100</span>)</li>
+                  <li>Your Qualtrics account allows JavaScript in surveys (most do by default)</li>
+                  <li>This server is running and accessible via HTTPS from the public internet</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="guide-step">
+              <div class="step-num">2</div>
+              <div class="step-body">
+                <h4>Set Up Survey Flow — Embedded Data</h4>
+                <ul>
+                  <li>Open your survey → click <strong>Survey Flow</strong> in the left sidebar</li>
+                  <li>Click <strong>Add a New Element Here</strong> → choose <strong>Embedded Data</strong></li>
+                  <li>Add field <span class="inline-code">CensusTract</span> — set its value from a URL parameter or a prior question</li>
+                  <li>Add field <span class="inline-code">ChatTranscript</span> — leave value <em>empty</em> (the widget will write into it)</li>
+                  <li>Optionally add <span class="inline-code">ChatTurns</span> for turn-count analytics</li>
+                  <li><strong>Drag this element to the very top</strong> of the survey flow, before any question blocks</li>
+                  <li>Click <strong>Save Flow</strong></li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="guide-step">
+              <div class="step-num">3</div>
+              <div class="step-body">
+                <h4>Pipe the Census Tract into Embedded Data</h4>
+                <ul>
+                  <li><strong>From URL parameter:</strong> In the Embedded Data element, set the value of <span class="inline-code">CensusTract</span> to <em>URL Query String Field</em> → parameter name (e.g. <span class="inline-code">ct</span>). Survey link becomes: <span class="inline-code">…?ct=37063020100</span></li>
+                  <li><strong>From a prior question:</strong> Use piped text, e.g. <span class="inline-code">${'{'}q://QID1/ChoiceTextEntryValue{'}'}</span></li>
+                  <li><strong>From a list:</strong> Use Contact List or Panel distribution — set <span class="inline-code">CensusTract</span> as a contact field and pipe it in via <span class="inline-code">${'{'}m://Field/CensusTract{'}'}</span></li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="guide-step">
+              <div class="step-num">4</div>
+              <div class="step-body">
+                <h4>Create the Chat Question</h4>
+                <ul>
+                  <li>In your survey, click <strong>Add Question</strong> where you want the chat widget</li>
+                  <li>Change question type to <strong>Text / Graphic</strong> (not Multiple Choice)</li>
+                  <li>Clear out any default question text</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="guide-step">
+              <div class="step-num">5</div>
+              <div class="step-body">
+                <h4>Paste the HTML Code</h4>
+                <ul>
+                  <li>Click the question text area → click the <strong>&lt;/&gt;</strong> source button (or "HTML View")</li>
+                  <li>Select all existing content and delete it</li>
+                  <li>Paste the <strong>HTML code</strong> from Step 1 above</li>
+                  <li>Click <strong>OK / Save</strong></li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="guide-step">
+              <div class="step-num">6</div>
+              <div class="step-body">
+                <h4>Paste the JavaScript Code</h4>
+                <ul>
+                  <li>Click the question's gear icon (<strong>⚙</strong>) → <strong>Add JavaScript</strong></li>
+                  <li>You'll see a pre-filled template with <span class="inline-code">Qualtrics.SurveyEngine.addOnload(function(){'{'}...{'}'})</span></li>
+                  <li><strong>Select all</strong> and delete the entire content</li>
+                  <li>Paste the <strong>JS code</strong> from Step 2 above</li>
+                  <li>Click <strong>Save</strong></li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="guide-step">
+              <div class="step-num">7</div>
+              <div class="step-body">
+                <h4>Configure Question Settings</h4>
+                <ul>
+                  <li>In the question settings, set <strong>Force Response → OFF</strong></li>
+                  <li>The widget programmatically disables the Next button during the chat and re-enables it only after all turns complete — standard Qualtrics force-response will conflict with this</li>
+                  <li>Do <strong>not</strong> add any display logic that hides this question mid-display</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="guide-step">
+              <div class="step-num">8</div>
+              <div class="step-body">
+                <h4>Test in Preview Mode</h4>
+                <ul>
+                  <li>Click <strong>Preview Survey</strong> (the ▶ button at the top of the survey editor)</li>
+                  <li>Add <span class="inline-code">?ct=37063020100</span> to the preview URL to pass a test Census Tract</li>
+                  <li>The chat widget should load and show the interviewer's opening message</li>
+                  <li>Complete all turns — confirm input is disabled after the last turn and the completion banner appears</li>
+                  <li>Finish the survey, then go to <strong>Data &amp; Analysis → Response</strong> and check the <span class="inline-code">ChatTranscript</span> embedded data field — it should contain the full conversation</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="guide-step">
+              <div class="step-num">9</div>
+              <div class="step-body">
+                <h4>Analyzing Transcripts After Data Collection</h4>
+                <ul>
+                  <li>Export data as <strong>CSV</strong> from Data &amp; Analysis</li>
+                  <li>The <span class="inline-code">ChatTranscript</span> column contains the full conversation in this format:</li>
+                </ul>
+                <div style="background:#f3f4f6;border-radius:6px;padding:10px 12px;font-family:monospace;font-size:.8rem;margin-top:8px;line-height:1.7">
+                  [BOT]: Thank you for participating...<br>
+                  <br>
+                  [USER]: I had no idea about this project.<br>
+                  <br>
+                  [BOT]: That's a common reaction...
+                </div>
+                <ul style="margin-top:8px">
+                  <li>Import transcripts into qualitative analysis software (NVivo, Atlas.ti, MAXQDA, or even Excel) for coding</li>
+                  <li>Use <span class="inline-code">ChatTurns</span> to filter out incomplete conversations</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="guide-step">
+              <div class="step-num">!</div>
+              <div class="step-body">
+                <h4>Troubleshooting Tips</h4>
+                <ul>
+                  <li><strong>Chat doesn't load:</strong> Check browser console for errors. Confirm the server is running and reachable via HTTPS. Qualtrics blocks mixed HTTP/HTTPS requests.</li>
+                  <li><strong>Wrong project shown:</strong> Confirm <span class="inline-code">CensusTract</span> is set in Survey Flow before the chat question. Use the browser console to check <span class="inline-code">Qualtrics.SurveyEngine.getEmbeddedData('CensusTract')</span>.</li>
+                  <li><strong>DEFAULT project always shown:</strong> Your CT value may have a format mismatch — the server normalizes spaces and dashes, but confirm the exact 11-digit FIPS code matches a key in your study data.</li>
+                  <li><strong>Transcript not saved:</strong> Confirm the <span class="inline-code">ChatTranscript</span> field exists in your Survey Flow Embedded Data element. The field name is case-sensitive.</li>
+                  <li><strong>Next button never appears:</strong> The widget enables Next only after all turns complete. If the chat crashes mid-session, reload the preview.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- end tab-embed -->
+
+    </div>
+    <!-- end page-edit -->
+
+  </div>
+  <!-- end main-content -->
+</div>
+<!-- end app-screen -->
+
+<!-- ── Delete confirm modal ──────────────────────────────────── -->
+<div id="delete-modal" class="modal-overlay hidden">
+  <div class="modal-box">
+    <h3>Delete this study?</h3>
+    <p>All configuration for <strong id="delete-study-name"></strong> will be permanently deleted.
+       This cannot be undone.</p>
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+      <button class="btn-danger" id="confirm-delete-btn">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Toast ──────────────────────────────────────────────────── -->
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════════
+     JAVASCRIPT
+══════════════════════════════════════════════════════════ -->
+<script>
+// ─── State ──────────────────────────────────────────────────────────────────
+let API_KEY = localStorage.getItem('dbot_key') || '';
+let currentStudyId = null;   // null = new study
+let pendingDeleteId = null;
+let csvParsedData  = null;   // parsed CSV → projects_data object
+
+// ─── Init ────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  if (API_KEY) {
+    showApp();
+  } else {
+    showScreen('login-screen');
+  }
+
+  // CSV drag-and-drop
+  const dz = document.getElementById('drop-zone');
+  dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('dragover'); });
+  dz.addEventListener('dragleave', () => dz.classList.remove('dragover'));
+  dz.addEventListener('drop', e => {
+    e.preventDefault(); dz.classList.remove('dragover');
+    const f = e.dataTransfer.files[0];
+    if (f) handleCSVFile(f);
+  });
+  document.getElementById('csv-file-input').addEventListener('change', e => {
+    if (e.target.files[0]) handleCSVFile(e.target.files[0]);
+  });
+
+  // JSON live validation
+  document.getElementById('f-data-json').addEventListener('input', validateJSON);
+
+  // Login form
+  document.getElementById('login-form').addEventListener('submit', async e => {
+    e.preventDefault();
+    const key = document.getElementById('api-key-input').value.trim();
+    if (!key) return;
+    // Try a quick API call to verify
+    const ok = await verifyKey(key);
+    if (ok) {
+      API_KEY = key;
+      localStorage.setItem('dbot_key', key);
+      showApp();
+    } else {
+      const errEl = document.getElementById('login-error');
+      errEl.textContent = 'Invalid API key — check server logs for the correct key.';
+      errEl.classList.remove('hidden');
+    }
+  });
+});
+
+// ─── Auth helpers ────────────────────────────────────────────────────────────
+async function verifyKey(key) {
+  try {
+    const res = await fetch('/api/admin/studies', {
+      headers: { Authorization: 'Bearer ' + key }
+    });
+    return res.status !== 401;
+  } catch { return false; }
+}
+
+function logout() {
+  localStorage.removeItem('dbot_key');
+  API_KEY = '';
+  showScreen('login-screen');
+  document.getElementById('api-key-input').value = '';
+  document.getElementById('login-error').classList.add('hidden');
+}
+
+// ─── Screens / pages ─────────────────────────────────────────────────────────
+function showScreen(id) {
+  ['login-screen','app-screen'].forEach(s =>
+    document.getElementById(s).classList.toggle('hidden', s !== id)
+  );
+}
+
+function showPage(id) {
+  ['page-studies','page-edit'].forEach(p =>
+    document.getElementById(p).classList.toggle('hidden', p !== id)
+  );
+}
+
+async function showApp() {
+  showScreen('app-screen');
+  document.getElementById('nav-server').textContent = window.location.origin;
+  showPage('page-studies');
+  await loadStudies();
+}
+
+function goToStudies() {
+  showPage('page-studies');
+  loadStudies();
+}
+
+// ─── Tab switching ────────────────────────────────────────────────────────────
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t =>
+    t.classList.toggle('active', t.dataset.tab === id)
+  );
+  document.querySelectorAll('.tab-content').forEach(c =>
+    c.classList.toggle('active', c.id === 'tab-' + id)
+  );
+  if (id === 'embed' && currentStudyId) loadEmbedCode(currentStudyId);
+}
+
+// ─── API client ───────────────────────────────────────────────────────────────
+async function api(method, path, body) {
+  const opts = {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: 'Bearer ' + API_KEY,
+    },
+  };
+  if (body !== undefined) opts.body = JSON.stringify(body);
+  const res = await fetch('/api/admin' + path, opts);
+  if (res.status === 401) { logout(); throw new Error('Unauthorized'); }
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(txt);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+// ─── Studies list ─────────────────────────────────────────────────────────────
+async function loadStudies() {
+  try {
+    const studies = await api('GET', '/studies');
+    renderStudies(studies);
+  } catch (e) {
+    toast('Failed to load studies: ' + e.message, 'error');
+  }
+}
+
+function renderStudies(studies) {
+  const grid = document.getElementById('studies-grid');
+  const empty = document.getElementById('studies-empty');
+  if (!studies.length) {
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  grid.innerHTML = studies.map(s => `
+    <div class="study-card">
+      <div class="study-card-name">${esc(s.name)}</div>
+      ${s.description ? `<div class="text-muted" style="font-size:.82rem">${esc(s.description)}</div>` : ''}
+      <div class="study-card-meta">
+        <span class="study-card-badge">${s.max_turns} turns</span>
+        <span>Updated ${fmtDate(s.updated_at)}</span>
+      </div>
+      <div class="study-card-actions">
+        <button class="btn-sm btn-primary" onclick="openEditStudy('${s.id}')">Edit</button>
+        <button class="btn-sm btn-secondary" onclick="openEmbedOnly('${s.id}')">Embed Code</button>
+        <button class="btn-icon danger" title="Delete" onclick="confirmDelete('${s.id}','${esc(s.name)}')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── Open new study ───────────────────────────────────────────────────────────
+async function openNewStudy() {
+  currentStudyId = null;
+  document.getElementById('edit-title').textContent = 'New Study';
+  document.getElementById('tab-embed-btn').disabled = true;
+  clearForm();
+  // Load default prompt templates
+  try {
+    const defs = await api('GET', '/defaults');
+    document.getElementById('f-research-context').value = defs.research_context;
+    document.getElementById('f-question-guidance').value = defs.question_guidance;
+  } catch {}
+  switchTab('info');
+  showPage('page-edit');
+}
+
+// ─── Open existing study for editing ─────────────────────────────────────────
+async function openEditStudy(id) {
+  currentStudyId = id;
+  try {
+    const study = await api('GET', '/studies/' + id);
+    document.getElementById('edit-title').textContent = 'Edit Study';
+    document.getElementById('tab-embed-btn').disabled = false;
+    populateForm(study);
+    switchTab('info');
+    showPage('page-edit');
+  } catch (e) {
+    toast('Could not load study: ' + e.message, 'error');
+  }
+}
+
+async function openEmbedOnly(id) {
+  currentStudyId = id;
+  try {
+    const study = await api('GET', '/studies/' + id);
+    document.getElementById('edit-title').textContent = 'Embed Code — ' + study.name;
+    document.getElementById('tab-embed-btn').disabled = false;
+    populateForm(study);
+    switchTab('embed');
+    showPage('page-edit');
+  } catch (e) {
+    toast('Could not load study: ' + e.message, 'error');
+  }
+}
+
+// ─── Form populate / clear ────────────────────────────────────────────────────
+function clearForm() {
+  document.getElementById('f-name').value = '';
+  document.getElementById('f-description').value = '';
+  document.getElementById('f-data-json').value = '';
+  document.getElementById('f-max-turns').value = '3';
+  document.getElementById('f-temperature').value = '0.3';
+  document.getElementById('temp-val').textContent = '0.3';
+  document.getElementById('f-research-context').value = '';
+  document.getElementById('f-question-guidance').value = '';
+  document.getElementById('json-val-msg').textContent = '';
+  setDataMode('json');
+}
+
+function populateForm(study) {
+  document.getElementById('f-name').value = study.name || '';
+  document.getElementById('f-description').value = study.description || '';
+  document.getElementById('f-data-json').value = JSON.stringify(study.projects_data, null, 2);
+  document.getElementById('f-max-turns').value = study.max_turns || 3;
+  document.getElementById('f-temperature').value = study.temperature || 0.3;
+  document.getElementById('temp-val').textContent = study.temperature || 0.3;
+  document.getElementById('f-research-context').value = study.research_context || '';
+  document.getElementById('f-question-guidance').value = study.question_guidance || '';
+  setDataMode('json');
+  validateJSON();
+}
+
+// ─── Save study ───────────────────────────────────────────────────────────────
+async function saveStudy() {
+  const btn = document.getElementById('save-btn');
+
+  // Collect form values
+  const name = document.getElementById('f-name').value.trim();
+  const description = document.getElementById('f-description').value.trim();
+  const research_context = document.getElementById('f-research-context').value.trim();
+  const question_guidance = document.getElementById('f-question-guidance').value.trim();
+  const max_turns = parseInt(document.getElementById('f-max-turns').value, 10);
+  const temperature = parseFloat(document.getElementById('f-temperature').value);
+
+  // Validate
+  if (!name) { toast('Study name is required.', 'error'); switchTab('info'); return; }
+  if (!research_context) { toast('Research context is required.', 'error'); switchTab('prompt'); return; }
+  if (!question_guidance) { toast('Question guidance is required.', 'error'); switchTab('prompt'); return; }
+
+  // Get projects data
+  let projects_data;
+  const dataMode = document.querySelector('input[name="data-mode"]:checked').value;
+  if (dataMode === 'csv') {
+    if (!csvParsedData) { toast('Please upload a CSV file.', 'error'); switchTab('data'); return; }
+    projects_data = csvParsedData;
+  } else {
+    const jsonStr = document.getElementById('f-data-json').value.trim();
+    if (!jsonStr) { toast('Project data is required.', 'error'); switchTab('data'); return; }
+    try { projects_data = JSON.parse(jsonStr); }
+    catch { toast('Project data JSON is invalid — check the syntax.', 'error'); switchTab('data'); return; }
+  }
+
+  if (!projects_data['DEFAULT']) {
+    toast('Project data must include a "DEFAULT" entry.', 'error'); switchTab('data'); return;
+  }
+
+  const payload = { name, description, projects_data, research_context, question_guidance, max_turns, temperature };
+
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  try {
+    let saved;
+    if (currentStudyId) {
+      saved = await api('PUT', '/studies/' + currentStudyId, payload);
+    } else {
+      saved = await api('POST', '/studies', payload);
+      currentStudyId = saved.id;
+    }
+    document.getElementById('tab-embed-btn').disabled = false;
+    toast('Study saved successfully!', 'success');
+    switchTab('embed');
+  } catch (e) {
+    toast('Save failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Save Study';
+  }
+}
+
+// ─── Embed code ───────────────────────────────────────────────────────────────
+async function loadEmbedCode(studyId) {
+  document.getElementById('embed-loading').classList.remove('hidden');
+  document.getElementById('embed-content').classList.add('hidden');
+  try {
+    const data = await api('GET', '/studies/' + studyId + '/embed');
+    document.getElementById('embed-html-block').textContent = data.html;
+    document.getElementById('embed-js-block').textContent = data.js;
+    document.getElementById('embed-loading').classList.add('hidden');
+    document.getElementById('embed-content').classList.remove('hidden');
+  } catch (e) {
+    document.getElementById('embed-loading').textContent = 'Failed to load embed code: ' + e.message;
+  }
+}
+
+function copyCode(blockId, btn) {
+  const text = document.getElementById(blockId).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy ' + (blockId.includes('html') ? 'HTML' : 'JS'); btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ─── Data mode toggle ─────────────────────────────────────────────────────────
+function setDataMode(mode) {
+  const isJson = mode === 'json';
+  document.getElementById('json-editor-wrap').classList.toggle('hidden', !isJson);
+  document.getElementById('csv-editor-wrap').classList.toggle('hidden', isJson);
+  document.querySelector(`input[name="data-mode"][value="${mode}"]`).checked = true;
+}
+
+// ─── JSON validation ──────────────────────────────────────────────────────────
+function validateJSON() {
+  const el = document.getElementById('f-data-json');
+  const msg = document.getElementById('json-val-msg');
+  if (!el.value.trim()) { msg.textContent = ''; return; }
+  try {
+    const d = JSON.parse(el.value);
+    const cts = Object.keys(d).filter(k => k !== 'DEFAULT').length;
+    const hasDefault = 'DEFAULT' in d;
+    msg.className = hasDefault ? 'val-ok' : 'val-error';
+    msg.textContent = `✓ Valid JSON — ${cts} Census Tract${cts !== 1 ? 's' : ''}${hasDefault ? ' + DEFAULT' : ' — ⚠ Missing "DEFAULT" entry'}`;
+  } catch (e) {
+    msg.className = 'val-error';
+    msg.textContent = '✗ Invalid JSON: ' + e.message;
+  }
+}
+
+// ─── Sample JSON ──────────────────────────────────────────────────────────────
+function insertSampleJSON() {
+  const sample = {
+    "37063020100": {
+      "project_name": "Durham Solar Array & Battery Storage",
+      "status": "Under Construction",
+      "jobs_created": 340,
+      "timeline": "Groundbreaking Q1 2024, operational Q3 2025",
+      "location": "Durham County, NC",
+      "technology_type": "Utility-scale solar PV + grid-scale battery storage",
+      "developer": "SunPath Energy LLC",
+      "investment_amount": "$420 million",
+      "ira_tax_credit": "48C Advanced Energy Manufacturing Tax Credit",
+      "community_benefit": "Priority hiring agreement for Durham County residents"
+    },
+    "DEFAULT": {
+      "project_name": "Regional Clean Energy Initiative",
+      "status": "Active",
+      "jobs_created": 300,
+      "timeline": "Ongoing through 2026",
+      "location": "Your region",
+      "technology_type": "Mixed clean energy and energy efficiency",
+      "developer": "Regional Energy Partnership",
+      "investment_amount": "$200 million (regional allocation)",
+      "ira_tax_credit": "Multiple IRA provisions",
+      "community_benefit": "Broad regional workforce development and clean energy access"
+    }
+  };
+  document.getElementById('f-data-json').value = JSON.stringify(sample, null, 2);
+  validateJSON();
+}
+
+// ─── CSV upload & parsing ─────────────────────────────────────────────────────
+const CSV_REQUIRED_COLS = [
+  'census_tract','project_name','status','jobs_created','timeline',
+  'location','technology_type','developer','investment_amount',
+  'ira_tax_credit','community_benefit'
+];
+
+function handleCSVFile(file) {
+  document.getElementById('csv-filename').textContent = file.name;
+  const reader = new FileReader();
+  reader.onload = e => handleCSVText(e.target.result, file.name);
+  reader.readAsText(file);
+}
+
+function handleCSVText(text, filename) {
+  const rows = parseCSV(text);
+  if (!rows.length) {
+    toast('CSV is empty or unreadable.', 'error'); return;
+  }
+  const headers = rows[0].map(h => h.trim().toLowerCase());
+  const missing = CSV_REQUIRED_COLS.filter(c => !headers.includes(c));
+  if (missing.length) {
+    toast('CSV missing columns: ' + missing.join(', '), 'error'); return;
+  }
+
+  const data = {};
+  for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (row.length < 2) continue;
+    const obj = {};
+    headers.forEach((h, idx) => { obj[h] = row[idx] || ''; });
+    const ct = obj['census_tract'].trim();
+    if (!ct) continue;
+    const entry = {};
+    CSV_REQUIRED_COLS.slice(1).forEach(c => {
+      entry[c] = c === 'jobs_created' ? (parseInt(obj[c], 10) || 0) : obj[c];
+    });
+    data[ct] = entry;
+  }
+
+  if (!Object.keys(data).length) {
+    toast('No valid rows found in CSV.', 'error'); return;
+  }
+  if (!data['DEFAULT']) {
+    toast('⚠ No DEFAULT row found — add a row with census_tract = DEFAULT as fallback.', 'error');
+  }
+
+  csvParsedData = data;
+  const count = Object.keys(data).filter(k => k !== 'DEFAULT').length;
+  document.getElementById('csv-parse-msg').textContent =
+    `✓ Parsed ${count} Census Tract${count !== 1 ? 's' : ''}${data['DEFAULT'] ? ' + DEFAULT' : ''} from ${filename}`;
+  document.getElementById('csv-json-preview').value = JSON.stringify(data, null, 2);
+  document.getElementById('csv-preview-wrap').classList.remove('hidden');
+}
+
+function parseCSV(text) {
+  const rows = [];
+  let row = [], cur = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === '"') {
+      if (inQ && text[i+1] === '"') { cur += '"'; i++; }
+      else inQ = !inQ;
+    } else if (c === ',' && !inQ) {
+      row.push(cur); cur = '';
+    } else if ((c === '\n' || c === '\r') && !inQ) {
+      if (c === '\r' && text[i+1] === '\n') i++;
+      row.push(cur); cur = '';
+      if (row.some(v => v.trim())) rows.push(row);
+      row = [];
+    } else {
+      cur += c;
+    }
+  }
+  if (cur || row.length) { row.push(cur); if (row.some(v => v.trim())) rows.push(row); }
+  return rows;
+}
+
+function downloadCSVTemplate() {
+  const cols = CSV_REQUIRED_COLS;
+  const sample = ['37063020100','Durham Solar Array','Under Construction','340',
+    'Groundbreaking Q1 2024','Durham County, NC','Solar PV','SunPath Energy LLC',
+    '$420 million','48C Advanced Energy Manufacturing','Priority local hiring'];
+  const defaultRow = ['DEFAULT','Regional Clean Energy Initiative','Active','300',
+    'Ongoing 2026','Your region','Mixed clean energy','Regional Energy Partnership',
+    '$200 million','Multiple IRA provisions','Workforce development and access'];
+  const csv = [cols.join(','), sample.join(','), defaultRow.join(',')].join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+  a.download = 'projects_data_template.csv';
+  a.click();
+}
+
+// ─── Delete ───────────────────────────────────────────────────────────────────
+function confirmDelete(id, name) {
+  pendingDeleteId = id;
+  document.getElementById('delete-study-name').textContent = name;
+  document.getElementById('delete-modal').classList.remove('hidden');
+  document.getElementById('confirm-delete-btn').onclick = async () => {
+    try {
+      await api('DELETE', '/studies/' + pendingDeleteId);
+      closeDeleteModal();
+      toast('Study deleted.', 'success');
+      loadStudies();
+    } catch (e) {
+      toast('Delete failed: ' + e.message, 'error');
+    }
+  };
+}
+
+function closeDeleteModal() {
+  document.getElementById('delete-modal').classList.add('hidden');
+  pendingDeleteId = null;
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+let toastTimer;
+function toast(msg, type = '') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (type ? ' ' + type : '');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = '', 3500);
+}
+
+// ─── Utilities ────────────────────────────────────────────────────────────────
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function fmtDate(iso) {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, {month:'short',day:'numeric',year:'numeric'});
+  } catch { return iso; }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!--
+  DynamicBot — Qualtrics Chat Widget
+  ===================================
+  Paste the ENTIRE contents of this file into a Qualtrics "Text/Graphic"
+  question's HTML editor. The companion JS (qualtrics_widget.js) should be
+  pasted into the question's JavaScript tab — OR kept inline here inside the
+  <script> tag at the bottom.
+
+  Before deploying, update BACKEND_URL in qualtrics_widget.js to point to
+  your live server.
+-->
+
+<style>
+  /* ── Container ────────────────────────────────────────── */
+  #dynamicbot-container {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 15px;
+    color: #222;
+    max-width: 700px;
+    margin: 0 auto;
+    border: 1px solid #d0d0d0;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  }
+
+  /* ── Header ───────────────────────────────────────────── */
+  #chat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 18px;
+    background: #1a3a5c;
+    color: #ffffff;
+  }
+  #chat-header-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+  #turn-indicator {
+    font-size: 0.78rem;
+    opacity: 0.8;
+    white-space: nowrap;
+  }
+
+  /* ── Message area ─────────────────────────────────────── */
+  #chat-messages {
+    height: 340px;
+    overflow-y: auto;
+    padding: 18px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    background: #f6f7f9;
+    scroll-behavior: smooth;
+  }
+
+  /* ── Message bubbles ──────────────────────────────────── */
+  .message-bubble {
+    max-width: 82%;
+    padding: 10px 15px;
+    border-radius: 14px;
+    line-height: 1.55;
+    font-size: 0.93rem;
+    word-wrap: break-word;
+  }
+  .bot-message {
+    align-self: flex-start;
+    background: #e4e8ed;
+    color: #1a1a1a;
+    border-bottom-left-radius: 4px;
+  }
+  .user-message {
+    align-self: flex-end;
+    background: #1a6bb5;
+    color: #ffffff;
+    border-bottom-right-radius: 4px;
+  }
+
+  /* ── Typing indicator ─────────────────────────────────── */
+  #typing-indicator {
+    display: none;
+    align-self: flex-start;
+    padding: 10px 15px;
+    background: #e4e8ed;
+    border-radius: 14px;
+    border-bottom-left-radius: 4px;
+    font-size: 0.82rem;
+    color: #666;
+    font-style: italic;
+  }
+  #typing-indicator.visible {
+    display: block;
+  }
+
+  /* ── Input area ───────────────────────────────────────── */
+  #chat-input-area {
+    display: flex;
+    gap: 10px;
+    padding: 14px 16px;
+    border-top: 1px solid #d8d8d8;
+    background: #ffffff;
+    align-items: flex-end;
+  }
+  #user-input {
+    flex: 1;
+    resize: none;
+    border: 1px solid #c0c4cc;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.93rem;
+    font-family: inherit;
+    color: #222;
+    line-height: 1.45;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  #user-input:focus {
+    border-color: #1a6bb5;
+  }
+  #user-input:disabled {
+    background: #f0f0f0;
+    color: #aaa;
+  }
+  #send-btn {
+    padding: 10px 22px;
+    background: #1a6bb5;
+    color: #ffffff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.93rem;
+    font-weight: 600;
+    white-space: nowrap;
+    transition: background 0.15s;
+    align-self: flex-end;
+  }
+  #send-btn:hover:not(:disabled) {
+    background: #15548e;
+  }
+  #send-btn:disabled {
+    background: #b0b8c4;
+    cursor: not-allowed;
+  }
+
+  /* ── Completion banner ────────────────────────────────── */
+  #completion-banner {
+    display: none;
+    padding: 16px 20px;
+    text-align: center;
+    background: #eaf4ea;
+    color: #2e7d32;
+    border-top: 1px solid #b8ddb8;
+    font-size: 0.93rem;
+    font-weight: 500;
+    line-height: 1.5;
+  }
+  #completion-banner.visible {
+    display: block;
+  }
+
+  /* ── Error state ──────────────────────────────────────── */
+  .error-message {
+    align-self: center;
+    background: #fdecea;
+    color: #c62828;
+    border: 1px solid #f5c6c6;
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+    max-width: 90%;
+    text-align: center;
+  }
+</style>
+
+<div id="dynamicbot-container" role="region" aria-label="Research Interview Chat">
+
+  <!-- Header -->
+  <div id="chat-header">
+    <span id="chat-header-title">Clean Energy Research Interview</span>
+    <span id="turn-indicator">Loading...</span>
+  </div>
+
+  <!-- Messages -->
+  <div id="chat-messages" role="log" aria-live="polite" aria-atomic="false">
+    <div id="typing-indicator" aria-hidden="true">Interviewer is typing...</div>
+  </div>
+
+  <!-- Input -->
+  <div id="chat-input-area">
+    <textarea
+      id="user-input"
+      rows="3"
+      maxlength="2000"
+      placeholder="Type your response here... (Enter to send, Shift+Enter for a new line)"
+      aria-label="Your response"
+      disabled
+    ></textarea>
+    <button id="send-btn" disabled aria-label="Send message">Send</button>
+  </div>
+
+  <!-- Completion -->
+  <div id="completion-banner" role="status" aria-live="polite">
+    Thank you — your responses have been saved. Please click <strong>Next</strong> to continue.
+  </div>
+
+</div>
+
+<!--
+  ============================================================
+  Paste qualtrics_widget.js content below (inside the script
+  tag) if you are combining both files into a single HTML block.
+  Otherwise, paste the JS into the Qualtrics question's JS tab.
+  ============================================================
+-->
+<!-- <script> ... qualtrics_widget.js content ... </script> -->
