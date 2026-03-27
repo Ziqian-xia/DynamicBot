@@ -1,8 +1,6 @@
-# nixpacks.toml — tells Railway how to build and run this project.
-# The Python app lives in backend/, so we point nixpacks there explicitly.
-
-[phases.install]
-cmds = ["pip install -r backend/requirements.txt"]
+# nixpacks.toml — Railway build configuration.
+# nixpacks auto-detects Python from root requirements.txt and runs pip install.
+# We only override the start command to point into the backend/ subdirectory.
 
 [start]
 cmd = "cd backend && uvicorn app:app --host 0.0.0.0 --port $PORT"
