@@ -1,7 +1,6 @@
 import asyncio
 import os
 import re
-import secrets
 import time
 import uuid
 from collections import defaultdict
@@ -9,7 +8,7 @@ from pathlib import Path
 from threading import Lock
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, RedirectResponse
 from openai import AsyncOpenAI, RateLimitError, APIStatusError
@@ -18,32 +17,6 @@ from pydantic import BaseModel, Field
 import storage
 
 load_dotenv()
-
-# ---------------------------------------------------------------------------
-# Admin API key — auto-generate if not set; print to logs for first-run UX
-# ---------------------------------------------------------------------------
-
-ADMIN_API_KEY: str = os.environ.get("ADMIN_API_KEY", "")
-if not ADMIN_API_KEY:
-    ADMIN_API_KEY = secrets.token_urlsafe(32)
-    print(f"\n{'='*60}")
-    print(f"  No ADMIN_API_KEY set — auto-generated for this session:")
-    print(f"  {ADMIN_API_KEY}")
-    print(f"  Add ADMIN_API_KEY=<value> to your .env to make it permanent.")
-    print(f"{'='*60}\n")
-
-# ---------------------------------------------------------------------------
-# OpenAI client
-# ---------------------------------------------------------------------------
-
-_openai_key = os.environ.get("OPENAI_API_KEY", "")
-if not _openai_key:
-    raise RuntimeError(
-        "\n\nOPENAI_API_KEY is not set.\n"
-        "Railway: go to your service → Variables → add OPENAI_API_KEY=sk-...\n"
-        "Local:   add OPENAI_API_KEY=sk-... to backend/.env\n"
-    )
-client = AsyncOpenAI(api_key=_openai_key)
 
 # ---------------------------------------------------------------------------
 # App
@@ -122,6 +95,18 @@ def _check_rate(ip: str, bucket: str, limit: int) -> bool:
 
 
 # ---------------------------------------------------------------------------
+# Lazy OpenAI client — reads API key from DB at call time
+# ---------------------------------------------------------------------------
+
+def _get_openai_client() -> AsyncOpenAI:
+    """Return an AsyncOpenAI client using the key stored in the DB."""
+    key = storage.get_config("openai_api_key")
+    if not key:
+        raise HTTPException(503, "OpenAI API key not configured. Visit the admin panel to set it up.")
+    return AsyncOpenAI(api_key=key)
+
+
+# ---------------------------------------------------------------------------
 # Startup / background tasks
 # ---------------------------------------------------------------------------
 
@@ -191,6 +176,7 @@ The following is the verified, complete record for this project. Present ONLY th
 
 
 async def call_openai(messages: list, model: str, temperature: float) -> str:
+    client = _get_openai_client()
     response = await client.chat.completions.create(
         model=model,
         messages=messages,
@@ -199,16 +185,6 @@ async def call_openai(messages: list, model: str, temperature: float) -> str:
         presence_penalty=0.1,
     )
     return response.choices[0].message.content.strip()
-
-
-# ---------------------------------------------------------------------------
-# Auth dependency for admin routes
-# ---------------------------------------------------------------------------
-
-def require_admin(request: Request) -> None:
-    auth = request.headers.get("Authorization", "")
-    if auth != f"Bearer {ADMIN_API_KEY}":
-        raise HTTPException(status_code=401, detail="Invalid admin API key")
 
 
 # ---------------------------------------------------------------------------
@@ -227,7 +203,7 @@ async def admin_ui():
 
 @app.get("/health")
 async def health():
-    return {"status": "ok"}   # session count removed — no need to expose it publicly
+    return {"status": "ok"}
 
 
 # ---------------------------------------------------------------------------
@@ -335,7 +311,29 @@ async def chat(req: ChatRequest, request: Request):
 
 
 # ---------------------------------------------------------------------------
-# Admin API — all routes protected by require_admin
+# Admin API — configuration
+# ---------------------------------------------------------------------------
+
+class OpenAIKeyPayload(BaseModel):
+    api_key: str = Field(..., min_length=10)
+
+
+@app.get("/api/admin/config/status")
+async def admin_config_status():
+    """Returns whether the OpenAI API key has been configured."""
+    key = storage.get_config("openai_api_key")
+    return {"configured": bool(key)}
+
+
+@app.post("/api/admin/config/openai-key", status_code=200)
+async def admin_set_openai_key(payload: OpenAIKeyPayload):
+    """Save the OpenAI API key to the database."""
+    storage.set_config("openai_api_key", payload.api_key.strip())
+    return {"saved": True}
+
+
+# ---------------------------------------------------------------------------
+# Admin API — studies
 # ---------------------------------------------------------------------------
 
 class StudyPayload(BaseModel):
@@ -349,17 +347,17 @@ class StudyPayload(BaseModel):
     model: str = "gpt-4o"
 
 
-@app.get("/api/admin/studies", dependencies=[Depends(require_admin)])
+@app.get("/api/admin/studies")
 async def admin_list_studies():
     return storage.list_studies()
 
 
-@app.post("/api/admin/studies", dependencies=[Depends(require_admin)], status_code=201)
+@app.post("/api/admin/studies", status_code=201)
 async def admin_create_study(payload: StudyPayload):
     return storage.create_study(payload.model_dump())
 
 
-@app.get("/api/admin/studies/{study_id}", dependencies=[Depends(require_admin)])
+@app.get("/api/admin/studies/{study_id}")
 async def admin_get_study(study_id: str):
     study = storage.get_study(study_id)
     if not study:
@@ -367,7 +365,7 @@ async def admin_get_study(study_id: str):
     return study
 
 
-@app.put("/api/admin/studies/{study_id}", dependencies=[Depends(require_admin)])
+@app.put("/api/admin/studies/{study_id}")
 async def admin_update_study(study_id: str, payload: StudyPayload):
     study = storage.update_study(study_id, payload.model_dump())
     if not study:
@@ -375,14 +373,14 @@ async def admin_update_study(study_id: str, payload: StudyPayload):
     return study
 
 
-@app.delete("/api/admin/studies/{study_id}", dependencies=[Depends(require_admin)])
+@app.delete("/api/admin/studies/{study_id}")
 async def admin_delete_study(study_id: str):
     if not storage.delete_study(study_id):
         raise HTTPException(404, "Study not found")
     return {"deleted": True}
 
 
-@app.get("/api/admin/studies/{study_id}/embed", dependencies=[Depends(require_admin)])
+@app.get("/api/admin/studies/{study_id}/embed")
 async def admin_embed_code(study_id: str, request: Request):
     study = storage.get_study(study_id)
     if not study:
@@ -418,7 +416,7 @@ async def admin_embed_code(study_id: str, request: Request):
     }
 
 
-@app.get("/api/admin/defaults", dependencies=[Depends(require_admin)])
+@app.get("/api/admin/defaults")
 async def admin_defaults():
     return {
         "research_context": storage.DEFAULT_RESEARCH_CONTEXT,

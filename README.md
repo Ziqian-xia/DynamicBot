@@ -30,23 +30,19 @@ Railway is a one-click deployment platform. Your server runs in isolation — yo
 2. Click **New Project** → **Deploy from GitHub repo** → select your fork.
 3. Railway will detect `nixpacks.toml` and start building automatically.
 
-**Step 3 — Set environment variables** in Railway → your service → Variables:
-
-| Variable | Required | Description |
-|---|---|---|
-| `OPENAI_API_KEY` | Yes | Your OpenAI API key (`sk-...`). Get one at [platform.openai.com/api-keys](https://platform.openai.com/api-keys). |
-| `ADMIN_API_KEY` | Recommended | Password for the `/admin` panel. If not set, a random key is auto-generated and printed to startup logs. Generate one: `python -c "import secrets; print(secrets.token_urlsafe(32))"` |
-| `DATA_DIR` | Yes (prod) | Set to `/data` when using a Railway Volume (see Step 4). |
-
-**Step 4 — Attach a persistent volume (required to keep your studies across deploys):**
+**Step 3 — Attach a persistent volume (required to keep your data across deploys):**
 1. In the Railway dashboard, go to your service → **Volumes** → **New Volume**.
 2. Set the mount path to `/data`.
 3. Add the environment variable `DATA_DIR=/data`.
 4. Redeploy.
 
-> Without a volume, your SQLite database (studies, configurations) is deleted every time Railway redeploys.
+> Without a volume, your SQLite database (studies, OpenAI key, configurations) is deleted every time Railway redeploys.
 
-**Step 5 — Open the admin panel** at your Railway URL (e.g., `https://dynamicbot-production.up.railway.app`).
+**Step 4 — Open the admin panel** at your Railway URL (e.g., `https://dynamicbot-production.up.railway.app`).
+
+On first visit, you will be prompted to enter your OpenAI API key. It is saved directly to your server's database — no environment variables needed.
+
+> **Security:** Keep your Railway URL private. It is your only credential to the admin panel. Anyone with the URL can manage studies and change the API key.
 
 ---
 
@@ -60,10 +56,8 @@ cd DynamicBot/backend
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 
-# Create your .env (copy from the example)
-cp ../.env.example .env
-# Edit .env: fill in OPENAI_API_KEY and ADMIN_API_KEY
-# For local widget testing add: ALLOW_NULL_ORIGIN=true
+# Optional: for local file:// widget testing
+# echo "ALLOW_NULL_ORIGIN=true" > .env
 
 # Start the server
 uvicorn app:app --reload --port 8000
@@ -134,8 +128,8 @@ After data collection, the `ChatTranscript` column in your exported CSV contains
 
 ## Security notes
 
-- **Your OpenAI API key is never sent to the browser.** It is used only server-side in Railway environment variables.
-- **Admin routes** (`/api/admin/*`) require the `ADMIN_API_KEY` Bearer token. Public routes (`/start`, `/chat`) are intentionally accessible but rate-limited.
+- **Your OpenAI API key is never sent to the browser.** It is stored server-side in SQLite and used only for server-side API calls.
+- **Admin panel security:** there is no login screen. The Railway URL itself is your credential — keep it private. Anyone with the URL can manage studies and update the API key.
 - **Rate limiting:** 300 `/start` requests and 1,500 `/chat` requests per IP per hour. This handles up to 300 simultaneous respondents behind a shared NAT (e.g., a university network) while blocking single-IP abuse.
 - **Input validation:** user messages are capped at 2,000 characters server-side.
 - **No PII stored:** the server stores only study configurations and in-memory session state. Transcripts are written directly to Qualtrics and never persisted on the server.
@@ -144,7 +138,14 @@ After data collection, the `ChatTranscript` column in your exported CSV contains
 
 ## Environment variables reference
 
-See [`.env.example`](.env.example) for a complete annotated reference.
+All environment variables are optional. The only one you may need:
+
+| Variable | Default | Description |
+|---|---|---|
+| `DATA_DIR` | `backend/` | Path where `dynamicbot.db` is stored. Set to `/data` when using a Railway persistent volume. |
+| `ALLOW_NULL_ORIGIN` | `false` | Set to `true` to allow `file://` widget testing locally. |
+
+Your OpenAI API key is entered through the admin panel web UI and stored in the database — it does not need to be set as an environment variable.
 
 ---
 

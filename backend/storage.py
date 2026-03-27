@@ -59,6 +59,12 @@ def init_db() -> None:
                 model               TEXT NOT NULL DEFAULT 'gpt-4o'
             )
         """)
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS config (
+                key   TEXT PRIMARY KEY,
+                value TEXT NOT NULL
+            )
+        """)
         conn.commit()
 
 
@@ -162,6 +168,22 @@ def delete_study(study_id: str) -> bool:
         result = conn.execute("DELETE FROM studies WHERE id = ?", (study_id,))
         conn.commit()
     return result.rowcount > 0
+
+
+def get_config(key: str) -> Optional[str]:
+    with _connect() as conn:
+        row = conn.execute("SELECT value FROM config WHERE key = ?", (key,)).fetchone()
+    return row["value"] if row else None
+
+
+def set_config(key: str, value: str) -> None:
+    with _connect() as conn:
+        conn.execute(
+            "INSERT INTO config (key, value) VALUES (?, ?) "
+            "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+            (key, value),
+        )
+        conn.commit()
 
 
 def count_tracts(study_id: str) -> int:
