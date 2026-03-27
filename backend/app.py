@@ -36,7 +36,14 @@ if not ADMIN_API_KEY:
 # OpenAI client
 # ---------------------------------------------------------------------------
 
-client = AsyncOpenAI(api_key=os.environ["OPENAI_API_KEY"])
+_openai_key = os.environ.get("OPENAI_API_KEY", "")
+if not _openai_key:
+    raise RuntimeError(
+        "\n\nOPENAI_API_KEY is not set.\n"
+        "Railway: go to your service → Variables → add OPENAI_API_KEY=sk-...\n"
+        "Local:   add OPENAI_API_KEY=sk-... to backend/.env\n"
+    )
+client = AsyncOpenAI(api_key=_openai_key)
 
 # ---------------------------------------------------------------------------
 # App
