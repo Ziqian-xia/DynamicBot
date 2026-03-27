@@ -19,6 +19,8 @@ Each deployment is independently owned — you bring your own OpenAI key, your o
 
 ## Deploy to Railway (recommended)
 
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/Ziqian-xia/DynamicBot)
+
 Railway is a one-click deployment platform. Your server runs in isolation — your OpenAI key and your data never leave your instance.
 
 **Step 1 — Fork this repository** to your GitHub account.
